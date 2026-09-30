@@ -1,0 +1,11 @@
+earthengine-api>=1.6.12
+xee>=0.1.2
+xarray>=2024.7
+netcdf4>=1.6
+dask>=2024.7
+numpy>=1.26
+pandas>=2.0
+pyproj>=3.6
+affine>=2.4
+shapely>=2.0
+matplotlib>=3.8

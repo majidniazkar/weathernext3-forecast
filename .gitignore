@@ -1,0 +1,14 @@
+# outputs
+*.nc
+*.xlsx
+masked/
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+# credentials — never commit these
+*.json
+!CITATION.cff
+.config/
