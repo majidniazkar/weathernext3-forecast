@@ -4,7 +4,7 @@
 Earth Engine only: no Cloud Storage bucket, no Requester-Pays, no billing account.
 An Earth Engine project (free for noncommercial use) and one browser login are enough.
 
-    python weathernext3_forecast.py --project MY_EE_PROJECT --bbox 6.0 44.0 14.0 48.0
+    python weathernext3_forecast.py --project MY_EE_PROJECT --bbox WEST SOUTH EAST NORTH
 
 Defaults give the next 14 days of hourly forecasts for precipitation and 2 m temperature
 on the native 0.1 deg grid, as a CF-style NetCDF with dimensions (time, latitude, longitude).
@@ -236,10 +236,9 @@ def parse_args(argv=None):
     )
     p.add_argument("--project", default=os.environ.get("EE_PROJECT"),
                    help="Earth Engine project id (or set EE_PROJECT).")
-    p.add_argument("--bbox", nargs=4, type=float, required=False,
+    p.add_argument("--bbox", nargs=4, type=float, required=True,
                    metavar=("WEST", "SOUTH", "EAST", "NORTH"),
-                   default=[6.0, 44.0, 14.0, 48.0],
-                   help="Area of interest in degrees (Earth Engine order).")
+                   help="Area of interest in degrees, Earth Engine order (required).")
     p.add_argument("--days", type=float, default=14.0,
                    help="Forecast length in days (max 15; synoptic runs reach 360 h).")
     p.add_argument("--res", choices=("0p1", "0p05"), default="0p1",

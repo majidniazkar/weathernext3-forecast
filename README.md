@@ -49,13 +49,13 @@ access to the WeatherNext collections.
 
 ```bash
 # 14 days of hourly precipitation + 2 m temperature over northern Italy
-python weathernext3_forecast.py --project MY_EE_PROJECT --bbox 6.0 44.0 14.0 48.0
+python weathernext3_forecast.py --project MY_EE_PROJECT --bbox WEST SOUTH EAST NORTH
 
 # Which runs are published right now?
 python weathernext3_forecast.py --project MY_EE_PROJECT --list-inits
 
 # A specific run, 5 days, ensemble mean only
-python weathernext3_forecast.py --project MY_EE_PROJECT --bbox 9.0 45.0 12.0 47.0 \
+python weathernext3_forecast.py --project MY_EE_PROJECT --bbox WEST SOUTH EAST NORTH \
     --init 2026-09-20T00:00:00Z --days 5 --stats mean
 
 # Station-calibrated temperature on the genuine 5 km grid
@@ -65,7 +65,7 @@ python weathernext3_forecast.py --project MY_EE_PROJECT --res 0p05 \
 
 | Option | Default | Meaning |
 |---|---|---|
-| `--bbox W S E N` | `6.0 44.0 14.0 48.0` | area of interest, degrees (Earth Engine order) |
+| `--bbox W S E N` | `W S E N` | *required* | area of interest, degrees (Earth Engine order) |
 | `--days` | `14` | forecast length; synoptic runs reach 15 days |
 | `--res` | `0p1` | `0p1` = 0.1° surface grid, `0p05` = 0.05° station-head grid |
 | `--vars` | `total_precipitation_1hr temperature_2m` | base variable names |
@@ -76,6 +76,58 @@ python weathernext3_forecast.py --project MY_EE_PROJECT --res 0p05 \
 | `--out` | auto | output path |
 
 A Colab version is in [`notebooks/WeatherNext3_Colab.ipynb`](notebooks/WeatherNext3_Colab.ipynb).
+
+## Reference evapotranspiration (ET₀)
+
+`weathernext3_eto.py` extends the downloader with FAO-56 reference evapotranspiration:
+
+```bash
+python weathernext3_eto.py --self-test                      # verify the physics, no EE needed
+python weathernext3_eto.py --project MY_EE_PROJECT --bbox WEST SOUTH EAST NORTH --days 14
+```
+
+It downloads `temperature_2m`, `dewpoint_temperature_2m`, the 10 m wind components,
+`surface_solar_radiation_downwards_1hr`, `mean_sea_level_pressure` and
+`total_precipitation_1hr`, adds grid-cell mean elevation from a DEM (default
+`USGS/SRTMGL1_003`), computes ET₀ **hourly** and sums to daily totals. Two files are written:
+`*_hourly.nc` and `*_daily.nc`, both carrying precipitation, temperature and ET₀.
+
+Three points where the standard recipe needs care, handled here:
+
+1. **There is no `wind_speed_10m` variable.** WeatherNext publishes `u_component_of_wind_10m`
+   and `v_component_of_wind_10m`; speed is `sqrt(u² + v²)`, then `u₂ = 0.748 u₁₀` (Eq. 47).
+2. **The 900 / 0.34 coefficients are the daily form.** Hourly ET₀ uses FAO-56 Eq. 53 with
+   `Cn = 37` and a non-negligible soil heat flux, `G = 0.1 Rₙ` by day and `0.5 Rₙ` at night.
+   Applying 900 to hourly data inflates the aerodynamic term by roughly 24×.
+3. **Net radiation needs clear-sky radiation**, hence extraterrestrial radiation for the hour
+   (Eq. 28, from latitude, longitude, day of year and solar time). That is computed internally,
+   so no cloud-cover variable is required. Night-time `Rs/Rso` is taken from the same day's
+   well-lit hours, clipped to [0.3, 1.0].
+
+Validation: `--self-test` reproduces FAO-56 Example 19 (hourly ET₀ at N'Diaye, Senegal) —
+every intermediate term within 0.1 % of the published values and ET₀ 0.627 vs 0.63 mm h⁻¹.
+
+Caveats: inputs are ensemble *statistics*, so this is ET₀ of the ensemble-mean weather rather
+than the ensemble mean of ET₀ (the equation is nonlinear); `hours_in_day` in the daily file
+flags partial days at the ends of the run; ET₀ is reference-grass demand, not catchment actual
+evapotranspiration.
+
+**NetCDF writer.** Colab images ship without `netCDF4`, so the script checks for a writer
+*before* downloading anything (a missing writer used to surface only after the whole forecast
+had been fetched) and falls back across `netcdf4` / `h5netcdf` / `scipy` at write time. In a
+bare Colab session run `!pip install -q netcdf4` first, or clone the repo and
+`pip install -r requirements.txt`.
+
+Options: `--stat`, `--pressure-source elevation|mslp`, `--utc-offset` (daily aggregation
+boundary), `--dem`, `--accum preceding|following`, plus the `--bbox` / `--days` / `--init`
+options shared with `weathernext3_forecast.py`.
+
+A Colab version is in [`notebooks/WeatherNext3_ETo_Colab.ipynb`](notebooks/WeatherNext3_ETo_Colab.ipynb).
+
+Per-basin tables: feed either output file, plus a shapefile of your catchments, to
+[`notebooks/WeatherNext3_SubBasin_Aggregation_Colab.ipynb`](notebooks/WeatherNext3_SubBasin_Aggregation_Colab.ipynb).
+It masks the grid with each polygon, takes `cos(latitude)`-weighted basin means, and writes one
+Excel workbook per NetCDF with a sheet per variable and a summary of totals and extremes.
 
 ## Things worth knowing
 

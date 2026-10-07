@@ -9,3 +9,5 @@ pyproj>=3.6
 affine>=2.4
 shapely>=2.0
 matplotlib>=3.8
+geopandas>=1.0
+openpyxl>=3.1

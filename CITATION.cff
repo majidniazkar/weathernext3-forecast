@@ -11,8 +11,8 @@ authors:
     given-names: "Majid"
     orcid: "https://orcid.org/0000-0002-5022-1026"
     affiliation: "<Junior Scientist at Risk Assessment and Adaptation Strategies (RAAS) Department, Euro-Mediterranean Center on Climate Change, Venezia, Italy and Adjunct Professor at Department of Environmental Sciences, Computer Science, and Statistics, Ca’ Foscari University of Venice, Venice, Italy>"
-version: "1.0.0"
-date-released: "2026-09-27"
+version: "1.1.0"
+date-released: "2026-10-07"
 license: MIT
 repository-code: "https://github.com/majidniazkar/weathernext3-forecast"
 keywords:
